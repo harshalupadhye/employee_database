@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"time"
 	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
-	"go.mongodb.org/mongo-driver/mongo"
-    "go.mongodb.org/mongo-driver/mongo/options"
+	// "time"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 //this will create a schema and model
@@ -48,37 +49,42 @@ type Designation struct {
 var employees []employeeSchema
 
 func main() {
-	 
-	clientURL := options.Client().ApplyURI(`mongodb+srv://$root:root@cluster0.kpteb.mongodb.net/test?authSource=admin&replicaSet=atlas-44aax5-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true`)
-    client, err := mongo.Connect(context.TODO(), clientURL)
+	//mongo db database connection
+	clientURL := options.Client().ApplyURI("mongodb+srv://root:root@cluster0.kpteb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority") //this how we establish the url for which later server will store data
+	client, err := mongo.NewClient(clientURL) //create the instance of the db
 	if err != nil {
-	  log.Fatal("mongo.Connect() ERROR:", err)
-    }
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	// err = client.Connect(ctx)
+	 log.Fatal(err)
+	}
+	err = client.Connect(context.Background())
+	if err != nil {
+	 log.Fatal(err)
+	}
+	// ctx, _ := context.WithTimeout(context.Background(), 15* time.Minute)
+	 /*this will allow us to perform an action for certain time period and 
+	if action is not performed suppose in this case in 15 sec then it will throw an error*/
+
+	// database := client.Database("employeemodels") //creating a database
+    // collection := database.Collection("employees") // collection to store data in that database
+
+	// oneDoc := employeeSchema{
+    //     ID:      "1",
+	// 	Name:    "Harshal Upadhye",
+	// 	Address: "Pune",
+	// 	Designation: &Designation{ //this is the sub struct of the outer struct employeeSchema
+	// 		Department: "Smart Building",
+	// 		Role:       "Software Engineer",
+	// 	},
+	// 	Salary: "75,000",
+	// 	Email:  "harshal.upadhye@siemens.com",
+	// 	Phone:  "7498171447",
+	// }
+	
+	// result, err := collection.InsertOne(ctx, oneDoc)
 	// if err != nil {
 	// 	log.Fatal("mongo.Connect() ERROR:", err)
 	//   }
-	database := client.Database("employeemodels")
-    collection := database.Collection("employees")
-	oneDoc := employeeSchema{
-        ID:      "1",
-		Name:    "Harshal Upadhye",
-		Address: "Pune",
-		Designation: &Designation{ //this is the sub struct of the outer struct employeeSchema
-			Department: "Smart Building",
-			Role:       "Software Engineer",
-		},
-		Salary: "75,000",
-		Email:  "harshal.upadhye@siemens.com",
-		Phone:  "7498171447",
-	}
-	result, err := collection.InsertOne(ctx, oneDoc)
-	if err != nil {
-		log.Fatal("mongo.Connect() ERROR: %v", err)
-	  }
-	newID := result.InsertedID
-	log.Fatal(newID)
+	// newID := result.InsertedID
+	// log.Fatal(newID)
 
 	//init Router
 	router := mux.NewRouter() // exactly like const router = express.Router() but here := means (const router : any = mux.Router())
@@ -161,6 +167,8 @@ func main() {
 		10000000*/
 		employees = append(employees, employee) // now employees slice var stores employee single var
 		json.NewEncoder(w).Encode(employee)     // send response
+
+
 
 	}).Methods("POST")
 
