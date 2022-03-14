@@ -1,0 +1,10 @@
+step 1: we can not run go project outside of the go path which is the place where go is installed so to do that in the root directory
+write "go mod init project name ie root directory name"
+
+you will see go.mod file now you can use go outside of workspace
+
+create main.go in the root folder and once you write a code perform go build && exe file name.exe
+
+go get -u github.com/gorilla/mux
+
+go get -u github.com/gorilla/handlers  go header handler in request
