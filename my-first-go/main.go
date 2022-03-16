@@ -3,14 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
+	// "fmt"
 	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
-	// "time"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	// "go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -50,51 +53,89 @@ var employees []employeeSchema
 
 func main() {
 	//mongo db database connection
+
+	ctx, _ := context.WithTimeout(context.Background(), 15*time.Minute)
+	/*this will allow us to perform an action for certain time period and
+	if action is not performed suppose in this case in 15 sec then it will throw an error like connection timeout*/
+
 	clientURL := options.Client().ApplyURI("mongodb+srv://root:root@cluster0.kpteb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority") //this how we establish the url for which later server will store data
-	client, err := mongo.NewClient(clientURL) //create the instance of the db
-	if err != nil {
-	 log.Fatal(err)
-	}
-	err = client.Connect(context.Background())
-	if err != nil {
-	 log.Fatal(err)
-	}
-	// ctx, _ := context.WithTimeout(context.Background(), 15* time.Minute)
-	 /*this will allow us to perform an action for certain time period and 
-	if action is not performed suppose in this case in 15 sec then it will throw an error*/
 
-	// database := client.Database("employeemodels") //creating a database
-    // collection := database.Collection("employees") // collection to store data in that database
+	client, err := mongo.Connect(ctx, clientURL) //this is actual connection ie mongoose.connect(url)
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// database := client.Database("employeemodels")  //creating a database
+	// collection := database.Collection("employees") // collection to store data in that database
+
+	//list all the data from db
+	//result, err := collection.Find(ctx, bson.M{}) /*this is Find method to find data from database here we pass ctx our connection timeout and bson.M{} that mean all records*/
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//this will push all the records at the same time
+	// var employeeList []bson.M //create slice var with bson.M type as we are recieving bson object from db
+	// result.All(ctx,&employeeList) //result has data and .All retreives everything and puts into employeeList
+	// fmt.Println(employeeList)
+
+	//this will show one by onee
+	// defer result.Close(ctx)
+	// for result.Next(ctx) {
+	// 	var employeeList bson.M
+	// 	result.Decode(&employeeList)
+	// 	fmt.Println(employeeList)
+	// }
+
+	//insert one doc into db collection
 	// oneDoc := employeeSchema{
-    //     ID:      "1",
-	// 	Name:    "Harshal Upadhye",
+	//     ID:      "1",
+	// 	Name:    "Kalpana Panchal",
 	// 	Address: "Pune",
 	// 	Designation: &Designation{ //this is the sub struct of the outer struct employeeSchema
 	// 		Department: "Smart Building",
-	// 		Role:       "Software Engineer",
+	// 		Role:       "Sr Software Engineer",
 	// 	},
-	// 	Salary: "75,000",
-	// 	Email:  "harshal.upadhye@siemens.com",
-	// 	Phone:  "7498171447",
+	// 	Salary: "1,00,000",
+	// 	Email:  "kalpana.panchal@siemens.com",
+	// 	Phone:  "1234567899",
 	// }
-	
+
 	// result, err := collection.InsertOne(ctx, oneDoc)
 	// if err != nil {
 	// 	log.Fatal("mongo.Connect() ERROR:", err)
-	//   }
-	// newID := result.InsertedID
-	// log.Fatal(newID)
+	// }
+	// fmt.Println(result)
+
+	//find one by id
+	//    var employeeList bson.M
+	//    err = collection.FindOne(ctx, bson.M{"id":"2"}).Decode(&employeeList)
+	//    	if err != nil {
+	// 	log.Fatal("mongo.Connect() ERROR:", err)
+	//    } else {
+	// 	   fmt.Println(employeeList)
+	//    }
+
+	//find one and delete by id
+
+	// var employeeList bson.M
+	//    err = collection.FindOneAndDelete(ctx, bson.M{"id":"1"}).Decode(&employeeList)
+	//    	if err != nil {
+	// 	log.Fatal("mongo.Connect() ERROR:", err)
+	//    } else {
+	// 	   fmt.Println(employeeList)
+	//    }
 
 	//init Router
-	router := mux.NewRouter() // exactly like const router = express.Router() but here := means (const router : any = mux.Router())
-	headers := handlers.AllowedHeaders([]string{"content-type"}) //here content type application/json is the only thing we are allowing
-	methods := handlers.AllowedMethods([]string{"GET","PUT","POST","DELETE"}) /* handler is the package that lets user decide what is allowed 
+	router := mux.NewRouter()                                                    // exactly like const router = express.Router() but here := means (const router : any = mux.Router())
+	headers := handlers.AllowedHeaders([]string{"content-type"})                 //here content type application/json is the only thing we are allowing
+	methods := handlers.AllowedMethods([]string{"GET", "PUT", "POST", "DELETE"}) /* handler is the package that lets user decide what is allowed
 	in the header manually here we are defining the methods that are allowed to be performed in a string slice*/
 	origins := handlers.AllowedOrigins([]string{"*"})
-  
-	
-	
+
 	//dummy data
 	employees = append(employees, employeeSchema{
 		ID:      "1",
@@ -137,6 +178,7 @@ func main() {
 	router.HandleFunc("/employees", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json") /*the w is response var and in that var we are setting up the header and telling application
 		that we are receiving json object as a response*/
+
 		json.NewEncoder(w).Encode(employees)
 
 	}).Methods("GET") /*here in go we dont have app.get("/",(req, res)=>{}) or app.post or router.get or router.post so we have HandleFunc which takes route
@@ -167,8 +209,6 @@ func main() {
 		10000000*/
 		employees = append(employees, employee) // now employees slice var stores employee single var
 		json.NewEncoder(w).Encode(employee)     // send response
-
-
 
 	}).Methods("POST")
 
@@ -207,7 +247,7 @@ func main() {
 
 	// this will spin the server
 
-	log.Fatal(http.ListenAndServe(":8000", handlers.CORS(methods,origins,headers)(router) )) /* here we have log package which has fatal which will act as a try and catch block
+	log.Fatal(http.ListenAndServe(":8000", handlers.CORS(methods, origins, headers)(router))) /* here we have log package which has fatal which will act as a try and catch block
 	if it finds a problem it will through an error and the http.ListenAndServe is exactly like app.listen(3000,()=>{}) in node but in node it will
 	take port number in int and a ananymous function as a callback to print server is running but here it will take string and the routers
 	in node we use app.use(router) to let express know the routes*/
